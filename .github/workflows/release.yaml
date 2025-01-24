@@ -17,8 +17,8 @@ jobs:
         uses: cocogitto/cocogitto-action@v3
         with:
           release: true
-          git-user: 'Cog Bot'
-          git-user-email: 'mycoolproject@org.org'
+          git-user: 'CI/CD'
+          git-user-email: 'me@e-beyond.de'
 
       - name: Generate Changelog
         run: cog changelog --at ${{ steps.release.outputs.version }} -t full_hash > GITHUB_CHANGELOG.md
