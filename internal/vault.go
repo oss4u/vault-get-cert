@@ -14,15 +14,10 @@ func GetCertificates(config *Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to authenticate: %w", err)
 	}
-	//resp, err := client.Write(ctx, "pki-int/issue/int-sys-int", map[string]interface{}{
-	//	"common_name": config.ServerName,
-	//	"ttl":         "48h",
-	//	"format":      "pem",
-	//})
 	resp, err := client.Secrets.PkiIssuerIssueWithRole(
 		ctx,
-		"int-sys-int",
-		"int-sys-int",
+		config.PkiIssuer,
+		config.PkiRole,
 		schema.PkiIssuerIssueWithRoleRequest{
 			AltNames:             "",
 			CommonName:           config.ServerName,
@@ -38,14 +33,23 @@ func GetCertificates(config *Config) error {
 			UriSans:              nil,
 			UserIds:              nil,
 		},
-		vault.WithMountPath("pki-int"),
+		vault.WithMountPath(config.PkiPath),
 	)
 	if err != nil {
-		return fmt.Errorf("failed to write: %w", err)
+		return fmt.Errorf("failed to get certificate/key: %w", err)
 	}
-	fmt.Printf("Cert: %s", resp.Data.Certificate)
-	fmt.Printf("Chain: %s", resp.Data.CaChain)
-	fmt.Printf("Key: %s", resp.Data.PrivateKey)
+	err = WriteCertificate(config, resp.Data.Certificate)
+	if err != nil {
+		return fmt.Errorf("failed to write certificate: %w", err)
+	}
+	err = WriteCaChain(config, resp.Data.CaChain)
+	if err != nil {
+		return fmt.Errorf("failed to write ca-chain: %w", err)
+	}
+	err = WritePrivateKey(config, resp.Data.PrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to write private key: %w", err)
+	}
 	return nil
 }
 

@@ -10,4 +10,7 @@ type Config struct {
 	CertPath       string
 	KeyPath        string
 	ChainPath      string
+	PkiPath        string
+	PkiRole        string
+	PkiIssuer      string
 }
