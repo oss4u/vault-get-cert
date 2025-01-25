@@ -9,12 +9,7 @@ import (
 
 func writeToFile(path string, dataArray []string) error {
 	filename := filepath.Clean(path)
-	_, err := os.Stat(filename)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("failed to stat file (%s): %w", filename, err)
-		}
-	}
+
 	f, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create file (%s): %w", filename, err)
@@ -34,6 +29,17 @@ func writeToFile(path string, dataArray []string) error {
 	return nil
 }
 
+func fileExist(filename string) (bool, error) {
+	_, err := os.Stat(filename)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to stat file (%s): %w", filename, err)
+	}
+	return true, nil
+}
+
 func WriteCertificate(cfg *Config, cerfificate string) error {
 	err := writeToFile(cfg.CertPath, []string{cerfificate})
 	if err != nil {
@@ -44,9 +50,15 @@ func WriteCertificate(cfg *Config, cerfificate string) error {
 }
 
 func WritePrivateKey(cfg *Config, privateKey string) error {
-	err := writeToFile(cfg.KeyPath, []string{privateKey})
+	exist, err := fileExist(cfg.KeyPath)
 	if err != nil {
-		return fmt.Errorf("failed to write private key to file: %w", err)
+		return fmt.Errorf("failed to check if file exists: %w", err)
+	}
+	if !exist {
+		err := writeToFile(cfg.KeyPath, []string{privateKey})
+		if err != nil {
+			return fmt.Errorf("failed to write private key to file: %w", err)
+		}
 	}
 	return nil
 }
