@@ -19,20 +19,33 @@ func GetCertificates(config *Config) error {
 	//	"ttl":         "48h",
 	//	"format":      "pem",
 	//})
-	resp, err := client.Secrets.PkiWriteIssuer(ctx, "int-sys-int", schema.PkiWriteIssuerRequest{
-		CrlDistributionPoints:        nil,
-		EnableAiaUrlTemplating:       false,
-		IssuerName:                   "",
-		IssuingCertificates:          nil,
-		LeafNotAfterBehavior:         "",
-		ManualChain:                  nil,
-		OcspServers:                  nil,
-		RevocationSignatureAlgorithm: "",
-		Usage:                        nil,
-	}, vault.WithMountPath("pki-int"))
-	//resp.Data.Certificate
-	//resp.Data.CaChain
-	//resp.Data.
+	resp, err := client.Secrets.PkiIssuerIssueWithRole(
+		ctx,
+		"int-sys-int",
+		"int-sys-int",
+		schema.PkiIssuerIssueWithRoleRequest{
+			AltNames:             "",
+			CommonName:           config.ServerName,
+			ExcludeCnFromSans:    false,
+			Format:               "",
+			IpSans:               nil,
+			NotAfter:             "",
+			OtherSans:            nil,
+			PrivateKeyFormat:     "",
+			RemoveRootsFromChain: false,
+			SerialNumber:         "",
+			Ttl:                  "",
+			UriSans:              nil,
+			UserIds:              nil,
+		},
+		vault.WithMountPath("pki-int"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to write: %w", err)
+	}
+	fmt.Printf("Cert: %s", resp.Data.Certificate)
+	fmt.Printf("Chain: %s", resp.Data.CaChain)
+	fmt.Printf("Key: %s", resp.Data.PrivateKey)
 	return nil
 }
 
