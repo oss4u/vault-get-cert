@@ -71,7 +71,7 @@ func init() {
 		ServerName:     "",
 		CertPath:       "/etc/ssl/private/server.crt",
 		KeyPath:        "/etc/ssl/private/server.key",
-		ChainPath:      "/etc/ssl/private/server-full.crt",
+		CaChainPath:    "/etc/ssl/private/server-full.crt",
 	}
 	err := wonsz.BindConfig(config, rootCmd,
 		wonsz.ConfigOpts{

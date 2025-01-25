@@ -9,7 +9,7 @@ type Config struct {
 	ServerName     string
 	CertPath       string
 	KeyPath        string
-	ChainPath      string
+	CaChainPath    string
 	PkiPath        string
 	PkiRole        string
 	PkiIssuer      string
