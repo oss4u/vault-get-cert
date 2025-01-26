@@ -7,16 +7,17 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 	"vault-get-cert/internal"
 )
 
 var (
 	config  *internal.Config
 	cfgFile string
+)
 
+func NewRootCommand() (*cobra.Command, error) {
 	// rootCmd represents the base command when called without any subcommands
-	rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "vault-get-cert",
 		Short: "A brief description of your application",
 		Long: `A longer description that spans multiple lines and likely contains
@@ -30,7 +31,25 @@ to quickly create a Cobra application.`,
 		// has an action associated with it:
 		RunE: RunCommand,
 	}
-)
+	pflags := rootCmd.PersistentFlags()
+	pflags.StringVarP(&cfgFile, "config", "c", "", "config file (default is /etc/vault-get-cert/config.yaml)")
+	err := viper.BindPFlag("config", pflags.Lookup("config"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind config flag: %w", err)
+	}
+	pflags.BoolVarP(&config.Debug, "debug", "d", false, "enable debugging")
+	err = viper.BindPFlag("debug", pflags.Lookup("debug"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind debug flag: %w", err)
+	}
+
+	flags := rootCmd.Flags()
+	err = commonFlags(flags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add common flags: %w", err)
+	}
+	return rootCmd, nil
+}
 
 func RunCommand(cmd *cobra.Command, args []string) error {
 	err := configureSecrets(config)
@@ -46,15 +65,7 @@ func RunCommand(cmd *cobra.Command, args []string) error {
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
-func init() {
-	cobra.OnInitialize(initConfig)
+func Execute() error {
 
 	config = &internal.Config{
 		RoleID:         "",
@@ -68,26 +79,28 @@ func init() {
 		CaChainPath:    "/etc/ssl/private/server-full.crt",
 	}
 
-	pflags := rootCmd.PersistentFlags()
-	pflags.StringVar(&cfgFile, "config", "", "config file (default is /etc/vault-get-cert/config.yaml)")
-	err := viper.BindPFlag("config", pflags.Lookup("config"))
+	cobra.OnInitialize(initConfig)
+
+	rootCmd, err := NewRootCommand()
 	if err != nil {
-		fmt.Println("failed to bind config flag")
-		return
+		return fmt.Errorf("failed to create root command: %w", err)
 	}
-	pflags.BoolVarP(&config.Debug, "debug", "d", false, "enable debugging")
-	err = viper.BindPFlag("debug", pflags.Lookup("debug"))
+	manualCmd, err := NewManualCommand()
 	if err != nil {
-		fmt.Println("failed to bind debug flag")
-		return
+		return fmt.Errorf("failed to create manual command: %w", err)
+	}
+	initCmd, err := NewInitCommand()
+	if err != nil {
+		return fmt.Errorf("failed to create init command: %w", err)
+	}
+	rootCmd.AddCommand(manualCmd, initCmd)
+
+	err = rootCmd.Execute()
+	if err != nil {
+		return fmt.Errorf("failed to execute command: %w", err)
 	}
 
-	flags := rootCmd.Flags()
-	err = commonFlags(flags)
-	if err != nil {
-		fmt.Println("failed to bind flags")
-		os.Exit(-1)
-	}
+	return nil
 }
 
 func initConfig() {
