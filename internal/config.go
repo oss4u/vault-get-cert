@@ -16,4 +16,5 @@ type Config struct {
 	PkiIssuer      string
 	IpAddresses    []string
 	CertTtl        string
+	SkipTlsVerify  bool
 }

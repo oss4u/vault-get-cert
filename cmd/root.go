@@ -43,6 +43,12 @@ to quickly create a Cobra application.`,
 		return nil, fmt.Errorf("failed to bind debug flag: %w", err)
 	}
 
+	pflags.BoolVarP(&config.SkipTlsVerify, "skip-tls-verify", "s", false, "skip tls verification")
+	err = viper.BindPFlag("skip-tls-verify", pflags.Lookup("skip-tls-verify"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind skip-tls-verify flag: %w", err)
+	}
+
 	flags := rootCmd.Flags()
 	err = commonFlags(flags)
 	if err != nil {
