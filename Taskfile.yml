@@ -1,0 +1,41 @@
+version: 3
+
+tasks:
+  watch:
+    cmds:
+      - task: build
+    desc: "Watch files"
+    silent: false
+    watch: true
+    sources:
+      - '**/*.go'
+      - go.mod
+      - go.sum
+  build:
+    desc: Builds the Go application
+    watch: false
+    sources:
+      - '**/*.go'
+    cmds:
+      - go build # ...
+  start_vault:
+    dir: ./scripts/
+    desc: Start Vault
+    cmds:
+      - docker-compose up -d
+      - sleep 2
+      - ./setup_vault.sh
+
+  stop_vault:
+    dir: ./scripts/
+    desc: Stop Vault
+    cmds:
+      - docker-compose stop
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./...
+      - task: start_vault
+      - ./scripts/test.sh
+      - task: stop_vault
