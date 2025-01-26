@@ -4,10 +4,11 @@ go 1.23
 
 require (
 	github.com/99designs/keyring v1.2.2
-	github.com/Mrucznik/wonsz v0.1.1
 	github.com/go-co-op/gocron/v2 v2.15.0
 	github.com/hashicorp/vault-client-go v0.4.3
 	github.com/spf13/cobra v1.8.1
+	github.com/spf13/pflag v1.0.5
+	github.com/spf13/viper v1.19.0
 )
 
 require (
@@ -34,13 +35,9 @@ require (
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
-	github.com/sevlyar/retag v0.0.0-20190429052747-c3f10e304082 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect

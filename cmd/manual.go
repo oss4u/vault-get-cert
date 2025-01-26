@@ -1,11 +1,11 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+Copyright © 2025 Marc Ende <me@e-beyond.de>
 */
 package cmd
 
 import (
 	"fmt"
-	"github.com/99designs/keyring"
+	"os"
 	"vault-get-cert/internal"
 
 	"github.com/spf13/cobra"
@@ -21,41 +21,29 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ring, err := keyring.Open(keyring.Config{
-			ServiceName: "vault-get-cert",
-		})
-		if err != nil {
-			return fmt.Errorf("failed to open keyring: %w", err)
-		}
-		roleId, err := ring.Get("role-id")
-		if err != nil {
-			return fmt.Errorf("failed to get role-id from keyring: %w", err)
-		}
-		secureId, err := ring.Get("secure-id")
-		if err != nil {
-			return fmt.Errorf("failed to get secure-id from keyring: %w", err)
-		}
-		config.RoleID = string(roleId.Data)
-		config.SecretID = string(secureId.Data)
-		err = internal.GetCertificates(config)
-		if err != nil {
-			return fmt.Errorf("failed to run server: %w", err)
-		}
-		return nil
-	},
+	RunE: RunManualCmd,
+}
+
+func RunManualCmd(cmd *cobra.Command, args []string) error {
+	err := configureSecrets(config)
+	if err != nil {
+		return fmt.Errorf("failed to configure secrets: %w", err)
+	}
+	err = internal.GetCertificates(config)
+	if err != nil {
+		return fmt.Errorf("failed to run server: %w", err)
+	}
+	return nil
 }
 
 func init() {
 	rootCmd.AddCommand(manualCmd)
 
-	// Here you will define your flags and configuration settings.
+	flags := manualCmd.Flags()
+	err := commonFlags(flags)
+	if err != nil {
+		fmt.Println("failed to bind flags")
+		os.Exit(-1)
+	}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// manualCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// manualCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

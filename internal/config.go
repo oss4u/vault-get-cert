@@ -1,6 +1,7 @@
 package internal
 
 type Config struct {
+	Debug          bool
 	RoleID         string
 	SecretID       string
 	VaultAddress   string
