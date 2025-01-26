@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/vault-client-go"
 	"github.com/hashicorp/vault-client-go/schema"
+	"strings"
 	"time"
 )
 
@@ -47,10 +48,22 @@ func GetCertificates(config *Config) error {
 }
 
 func authenticate(ctx context.Context, config *Config) (*vault.Client, error) {
-	client, err := vault.New(
-		vault.WithAddress(config.VaultAddress),
-		vault.WithRequestTimeout(30*time.Second),
-	)
+	var client *vault.Client
+	var err error
+	if strings.HasPrefix(config.VaultAddress, "https") {
+		client, err = vault.New(
+			vault.WithAddress(config.VaultAddress),
+			vault.WithRequestTimeout(30*time.Second),
+			vault.WithTLS(vault.TLSConfiguration{
+				InsecureSkipVerify: config.SkipTlsVerify,
+			}),
+		)
+	} else {
+		client, err = vault.New(
+			vault.WithAddress(config.VaultAddress),
+			vault.WithRequestTimeout(30*time.Second),
+		)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %w", err)
 	}

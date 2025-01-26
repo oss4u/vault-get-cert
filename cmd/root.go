@@ -1,67 +1,78 @@
 /*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+Copyright © 2025 Marc Ende <me@e-beyond.de>
 */
 package cmd
 
 import (
 	"fmt"
-	"github.com/99designs/keyring"
-	"github.com/Mrucznik/wonsz"
 	"github.com/spf13/cobra"
-	"os"
+	"github.com/spf13/viper"
 	"vault-get-cert/internal"
 )
 
-var config *internal.Config
+var (
+	config  *internal.Config
+	cfgFile string
+)
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "vault-get-cert",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
+func NewRootCommand() (*cobra.Command, error) {
+	// rootCmd represents the base command when called without any subcommands
+	rootCmd := &cobra.Command{
+		Use:   "vault-get-cert",
+		Short: "A brief description of your application",
+		Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
 
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	SilenceUsage: true,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ring, err := keyring.Open(keyring.Config{
-			ServiceName: "vault-get-cert",
-		})
-		if err != nil {
-			return fmt.Errorf("failed to open keyring: %w", err)
-		}
-		roleId, err := ring.Get("role-id")
-		if err != nil {
-			return fmt.Errorf("failed to get role-id from keyring: %w", err)
-		}
-		secureId, err := ring.Get("secure-id")
-		if err != nil {
-			return fmt.Errorf("failed to get secure-id from keyring: %w", err)
-		}
-		config.RoleID = string(roleId.Data)
-		config.SecretID = string(secureId.Data)
-		err = internal.RunServer(config)
-		if err != nil {
-			return fmt.Errorf("failed to run server: %w", err)
-		}
-		return nil
-	},
+		SilenceUsage: true,
+		// Uncomment the following line if your bare application
+		// has an action associated with it:
+		RunE: RunCommand,
+	}
+	pflags := rootCmd.PersistentFlags()
+	pflags.StringVarP(&cfgFile, "config", "c", "", "config file (default is /etc/vault-get-cert/config.yaml)")
+	err := viper.BindPFlag("config", pflags.Lookup("config"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind config flag: %w", err)
+	}
+	pflags.BoolVarP(&config.Debug, "debug", "d", false, "enable debugging")
+	err = viper.BindPFlag("debug", pflags.Lookup("debug"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind debug flag: %w", err)
+	}
+
+	pflags.BoolVarP(&config.SkipTlsVerify, "skip-tls-verify", "s", false, "skip tls verification")
+	err = viper.BindPFlag("skip-tls-verify", pflags.Lookup("skip-tls-verify"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind skip-tls-verify flag: %w", err)
+	}
+
+	flags := rootCmd.Flags()
+	err = commonFlags(flags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add common flags: %w", err)
+	}
+	return rootCmd, nil
+}
+
+func RunCommand(cmd *cobra.Command, args []string) error {
+	err := configureSecrets(config)
+	if err != nil {
+		return fmt.Errorf("failed to configure secrets: %w", err)
+	}
+	err = internal.RunServer(config)
+	if err != nil {
+		return fmt.Errorf("failed to run server: %w", err)
+	}
+	return nil
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
+func Execute() error {
 
-func init() {
 	config = &internal.Config{
 		RoleID:         "",
 		SecretID:       "",
@@ -73,23 +84,44 @@ func init() {
 		KeyPath:        "/etc/ssl/private/server.key",
 		CaChainPath:    "/etc/ssl/private/server-full.crt",
 	}
-	err := wonsz.BindConfig(config, rootCmd,
-		wonsz.ConfigOpts{
-			ConfigPaths: []string{".", "/etc/vault-get-cert"},
-			ConfigType:  "yaml",
-			ConfigName:  "config",
-		},
-	)
+
+	cobra.OnInitialize(initConfig)
+
+	rootCmd, err := NewRootCommand()
 	if err != nil {
-		return
+		return fmt.Errorf("failed to create root command: %w", err)
 	}
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
+	manualCmd, err := NewManualCommand()
+	if err != nil {
+		return fmt.Errorf("failed to create manual command: %w", err)
+	}
+	initCmd, err := NewInitCommand()
+	if err != nil {
+		return fmt.Errorf("failed to create init command: %w", err)
+	}
+	rootCmd.AddCommand(manualCmd, initCmd)
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.vault-get-cert.yaml)")
+	err = rootCmd.Execute()
+	if err != nil {
+		return fmt.Errorf("failed to execute command: %w", err)
+	}
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	return nil
+}
+
+func initConfig() {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		viper.AddConfigPath("/etc/vault-get-cert")
+		viper.SetConfigType("yaml")
+		viper.SetConfigName("config")
+	}
+
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
 }

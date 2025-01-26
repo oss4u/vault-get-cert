@@ -8,7 +8,7 @@ export SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null &&
 export VAULT_TOKEN="root-token"
 export VAULT_ADDR='https://127.0.0.1:8201'
 export VAULT_SKIP_VERIFY='true'
-mkdir ./tmp
+mkdir  -p ./tmp
 export SHORT="int"
 export PKI="pki-$SHORT"
 export DOMAIN="int.sys-int.de"

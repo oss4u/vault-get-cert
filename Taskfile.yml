@@ -13,9 +13,6 @@ tasks:
       - go.sum
   build:
     desc: Builds the Go application
-    watch: false
-    sources:
-      - '**/*.go'
     cmds:
       - go build # ...
   start_vault:
@@ -35,6 +32,7 @@ tasks:
   test:
     desc: Run tests
     cmds:
+      - task: build
       - go test ./...
       - task: start_vault
       - ./scripts/test.sh

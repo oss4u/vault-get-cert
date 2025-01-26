@@ -1,6 +1,7 @@
 package internal
 
 type Config struct {
+	Debug          bool
 	RoleID         string
 	SecretID       string
 	VaultAddress   string
@@ -15,4 +16,5 @@ type Config struct {
 	PkiIssuer      string
 	IpAddresses    []string
 	CertTtl        string
+	SkipTlsVerify  bool
 }
