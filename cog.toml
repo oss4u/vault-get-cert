@@ -1,0 +1,9 @@
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+repository = "cocogitto"
+owner = "cocogitto"
+authors = [
+    { signature = "Marc Ende", username = "eBeyond" },
+]
