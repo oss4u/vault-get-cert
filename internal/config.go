@@ -13,4 +13,6 @@ type Config struct {
 	PkiPath        string
 	PkiRole        string
 	PkiIssuer      string
+	IpAddresses    []string
+	CertTtl        string
 }

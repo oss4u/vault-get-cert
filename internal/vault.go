@@ -19,19 +19,12 @@ func GetCertificates(config *Config) error {
 		config.PkiIssuer,
 		config.PkiRole,
 		schema.PkiIssuerIssueWithRoleRequest{
-			AltNames:             "",
 			CommonName:           config.ServerName,
 			ExcludeCnFromSans:    false,
-			Format:               "",
-			IpSans:               nil,
-			NotAfter:             "",
-			OtherSans:            nil,
+			IpSans:               config.IpAddresses,
 			PrivateKeyFormat:     "",
 			RemoveRootsFromChain: false,
-			SerialNumber:         "",
-			Ttl:                  "",
-			UriSans:              nil,
-			UserIds:              nil,
+			Ttl:                  config.CertTtl,
 		},
 		vault.WithMountPath(config.PkiPath),
 	)
@@ -54,7 +47,6 @@ func GetCertificates(config *Config) error {
 }
 
 func authenticate(ctx context.Context, config *Config) (*vault.Client, error) {
-	// prepare a client with the given base address
 	client, err := vault.New(
 		vault.WithAddress(config.VaultAddress),
 		vault.WithRequestTimeout(30*time.Second),
