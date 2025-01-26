@@ -36,4 +36,6 @@ tasks:
       - go test ./...
       - task: start_vault
       - ./scripts/test.sh
-      - task: stop_vault
+      - defer: {
+        task: stop_vault
+      }
